@@ -95,6 +95,9 @@ NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
         gyro.x,
         gyro.y,
         gyro.z);
+	mavlink_msg_multiuav_automata_states_send(
+					chan,
+					1,1,1);
 }
 
 #if AC_FENCE == ENABLED
@@ -714,6 +717,15 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
     MAV_RESULT result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
 
     switch (msg->msgid) {
+    //reddy
+    case MAVLINK_MSG_ID_MULTIUAV_AUTOMATA_INITIALPARAMS:
+    {
+        mavlink_multiuav_automata_initialparams_t packet;
+        mavlink_msg_multiuav_automata_initialparams_decode(msg, &packet);
+        copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - Number of bases: %i", packet.number_of_bases);
+        break;
+    }
+    //endreddy
 
     case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
     {

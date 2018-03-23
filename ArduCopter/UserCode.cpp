@@ -1,4 +1,22 @@
 #include "Copter.h"
+#include "GCS_Mavlink.h"
+
+/*
+    case MAVLINK_MSG_ID_MULTIUAV_AUTOMATA_STATES:
+    {
+        mavlink_multiuav_automata_states_t packet;
+        mavlink_multiuav_automata_states_decode(msg, &packet);
+        break;
+    }
+
+    case MAVLINK_MSG_ID_MULTIUAV_TASKEND:
+    {
+        mavlink_multiuav_taskend_t packet;
+        mavlink_multiuav_taskend_decode(msg, &packet);
+        break;
+    }
+ */
+
 
 #ifdef USERHOOK_INIT
 void Copter::userhook_init()
@@ -26,6 +44,13 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+    //gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - 10 HZ");
+    /*
+     *
+	mavlink_msg_multiuav_automata_states_send(
+					chan,
+					1,1,1);
+     */
 }
 #endif
 
