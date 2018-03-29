@@ -12,6 +12,17 @@ public:
 
     void data_stream_send(void) override;
 
+    //reddy
+    void send_current_states(
+    		STATE_GEOSTATE geo,
+    		STATE_OCCSTATE occ,
+    		STATE_DYNSTATE dyn,
+    		uint64_t base_index);
+
+    void send_request_charge();
+
+    void send_task_end();
+    //endreddy
 protected:
 
     uint32_t telem_delay() const override;

@@ -95,9 +95,6 @@ NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
         gyro.x,
         gyro.y,
         gyro.z);
-	mavlink_msg_multiuav_automata_states_send(
-					chan,
-					1,1,1);
 }
 
 #if AC_FENCE == ENABLED
@@ -720,11 +717,37 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
     //reddy
     case MAVLINK_MSG_ID_MULTIUAV_AUTOMATA_INITIALPARAMS:
     {
-        mavlink_multiuav_automata_initialparams_t packet;
-        mavlink_msg_multiuav_automata_initialparams_decode(msg, &packet);
-        copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - Number of bases: %i", packet.number_of_bases);
+    	mavlink_multiuav_automata_initialparams_t packet;
+    	mavlink_msg_multiuav_automata_initialparams_decode(msg, &packet);
+    	copter.base_occupied = packet.base_index;
+		//copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - Number of bases: %i", packet.number_of_bases);
+        copter.create_automata(packet.number_of_bases, copter.base_occupied);
         break;
     }
+
+    case MAVLINK_MSG_ID_MULTIUAV_RETURNTOBASE:
+    {
+    	mavlink_multiuav_returntobase_t packet;
+    	mavlink_msg_multiuav_returntobase_decode(msg, &packet);
+        //copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - MULTIUAV_AUTOMATA_INITIALPARAMS received");
+    	copter.triggerTransitions(SCAutomaton::returnToBase);
+    	// Acionando evento controlável: GO_I
+    	copter.set_mode(AUTO, MODE_REASON_COORDINATOR_COMMAND);
+    	copter.base_occupied = packet.base_index;
+    	copter.triggerTransitions(SCAutomaton::go.at(copter.base_occupied - 1));
+        break;
+    }
+
+    case MAVLINK_MSG_ID_MULTIUAV_ASSIGNMENT:
+	{
+        //copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - MULTIUAV_ASSIGNMENT received");
+		copter.triggerTransitions(SCAutomaton::assignment);
+    	// Acionando evento controlável: ANSWER
+    	copter.set_mode(AUTO, MODE_REASON_COORDINATOR_COMMAND);
+    	copter.base_occupied = 0;
+    	copter.triggerTransitions(SCAutomaton::answer);
+		break;
+	}
     //endreddy
 
     case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
@@ -1881,3 +1904,28 @@ void GCS_MAVLINK_Copter::set_ekf_origin(const Location& loc)
 {
     copter.set_ekf_origin(loc);
 }
+
+//reddy
+void GCS_MAVLINK_Copter::send_current_states(
+		STATE_GEOSTATE geo,
+		STATE_OCCSTATE occ,
+		STATE_DYNSTATE dyn,
+		uint64_t base_index) {
+	mavlink_msg_multiuav_automata_states_send(
+					chan,
+					geo, occ, dyn, base_index);
+}
+
+void GCS_MAVLINK_Copter::send_request_charge() {
+	mavlink_msg_multiuav_requestcharge_send(
+					chan,
+					0);
+}
+
+void GCS_MAVLINK_Copter::send_task_end() {
+	mavlink_msg_multiuav_taskend_send(
+					chan,
+					0);
+}
+
+//endreddy

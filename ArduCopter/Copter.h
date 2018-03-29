@@ -143,7 +143,259 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
 #endif
+//reddy
+#include <vector>
+#include <string>
 
+// Macro que converte um valor inteiro para string
+#include <sstream>
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
+
+// Classe que descreve um autômato usado em controle supervisório
+class SCAutomaton {
+public:
+	class State {
+	private:
+		std::string _label;
+		bool _isMarked;
+		bool _isInitial;
+
+	public:
+		State() {
+			_label = "";
+			_isMarked = false;
+			_isInitial = false;
+		}
+
+		State(std::string label, bool marked)
+		{
+			_label = label;
+			_isMarked = marked;
+			_isInitial = false;
+		}
+
+		void setInitial() {
+			_isInitial = true;
+		}
+
+		std::string getLabel() {
+			return _label;
+		}
+
+		inline bool operator==(State& state) {
+			return (this->getLabel().compare(state.getLabel()) == 0);
+		}
+
+	};
+
+	class Event {
+	private:
+		std::string _label;
+		bool _isControllable;
+
+	public:
+		Event()
+		{
+			_label = "";
+			_isControllable = false;
+		}
+
+		Event(std::string label, bool isControllable)
+		{
+			_label = label;
+			_isControllable = isControllable;
+		}
+
+		std::string getLabel() {
+			return _label;
+		}
+
+		inline bool operator==(Event& event) {
+			return (this->getLabel().compare(event.getLabel()) == 0);
+		}
+	};
+
+	class Transition {
+	private:
+		Event _event;
+		State _origin;
+		State _target;
+
+	public:
+		Transition() {}
+		Transition(Event theEvent, State origin, State target) {
+			_event = theEvent;
+			_origin = origin;
+			_target = target;
+		}
+
+		State getOrigin() {
+			return _origin;
+		}
+
+		State getTarget() {
+			return _target;
+		}
+
+		Event getEvent() {
+			return _event;
+		}
+	};
+
+	typedef std::vector<State> StateVector;
+	typedef std::vector<Transition> TransitionVector;
+	typedef std::vector<Event> Language;
+
+private:
+	std::string _name;
+	StateVector _states;
+	StateVector _markedStates;
+	State _initialState;
+	TransitionVector _transitionFunction;
+	Language _language;
+
+	// For supervision
+	State _currentState;
+
+public:
+	// Events
+	static SCAutomaton::Event answer;
+	static SCAutomaton::Event requestCharge;
+	static std::vector<SCAutomaton::Event> go;
+
+	static SCAutomaton::Event taskEnd;
+	static SCAutomaton::Event returnToBase;
+	static SCAutomaton::Event assignment;
+	static SCAutomaton::Event criticalSoc;
+	static SCAutomaton::Event acceptableSoc;
+	static std::vector<SCAutomaton::Event> arrive;
+
+	//States
+	static SCAutomaton::State away;
+
+	SCAutomaton() { }
+	SCAutomaton(
+			std::string name,
+			StateVector states,
+			StateVector markedStates,
+			State initialState,
+			TransitionVector transitionFunction,
+			Language language) {
+		_name = name;
+		_states = states;
+		_markedStates = markedStates;
+		_initialState = initialState;
+		_transitionFunction = transitionFunction;
+		_language = language;
+		_currentState = initialState;
+	}
+
+	void setFields(
+				std::string name,
+				StateVector states,
+				StateVector markedStates,
+				State initialState,
+				TransitionVector transitionFunction,
+				Language language) {
+		_name = name;
+		_states = states;
+		_markedStates = markedStates;
+		_initialState = initialState;
+		_transitionFunction = transitionFunction;
+		_language = language;
+		_currentState = initialState;
+	}
+
+	STATE_GEOSTATE getCurrentGeographicState() {
+		std::string genericLabel = _currentState.getLabel();
+
+		size_t len = genericLabel.length();
+		for(size_t i = 0; i < len; i++){
+			if (isdigit(genericLabel[i]))
+			{
+				genericLabel.erase(i,1);
+				len--;
+			}
+		}
+
+		if(genericLabel.compare("BASE") == 0)
+			return STATE_GEOSTATE::BASE;
+
+		if(genericLabel.compare("AWAY") == 0)
+			return STATE_GEOSTATE::AWAY;
+	}
+
+	STATE_OCCSTATE getCurrentOccupationalState() {
+		std::string genericLabel = _currentState.getLabel();
+
+		size_t len = genericLabel.length();
+		for(size_t i = 0; i < len; i++){
+			if (isdigit(genericLabel[i]))
+			{
+				genericLabel.erase(i,1);
+				len--;
+			}
+		}
+
+		if(genericLabel.compare("IDLE") == 0)
+			return STATE_OCCSTATE::IDLE;
+
+		if(genericLabel.compare("BUSY_ASSIGNMENT") == 0)
+			return STATE_OCCSTATE::BUSY_ASSIGNMENT;
+
+		if(genericLabel.compare("BUSY_RECHARGING") == 0)
+			return STATE_OCCSTATE::BUSY_RECHARGING;
+	}
+
+
+	STATE_DYNSTATE getCurrentDynamicState() {
+		std::string genericLabel = _currentState.getLabel();
+
+		size_t len = genericLabel.length();
+		for(size_t i = 0; i < len; i++){
+		    if (isdigit(genericLabel[i]))
+		    {
+		    	genericLabel.erase(i,1);
+		        len--;
+		    }
+		}
+
+		if(genericLabel.compare("STATIONARY") == 0)
+			return STATE_DYNSTATE::STATIONARY;
+
+		if(genericLabel.compare("FLYING_ASSIGNMENT") == 0)
+			return STATE_DYNSTATE::FLYING_ASSIGNMENT;
+
+		if(genericLabel.compare("FLYING_BASE") == 0)
+			return STATE_DYNSTATE::FLYING_BASE;
+	}
+
+	bool isAtState(std::string label) {
+		size_t len = label.length();
+		for(size_t i = 0; i < len; i++){
+		    if (isdigit(label[i]))
+		    {
+		    	label.erase(i,1);
+		        len--;
+		    }
+		}
+
+		return label.compare(_currentState.getLabel()) == 0;
+	}
+
+	void triggerTransition(Event e) {
+		for (uint64_t i = 0; i < _transitionFunction.size(); i++)
+		{
+			Transition t = _transitionFunction.at(i);
+			if (t.getOrigin() == _currentState && t.getEvent() == e)
+			{
+				_currentState = t.getTarget();
+			}
+		}
+	}
+};
+//endreddy
 
 class Copter : public AP_HAL::HAL::Callbacks {
 public:
@@ -166,6 +418,16 @@ public:
     void loop() override;
 
 private:
+    //reddy
+    SCAutomaton geographicAutomaton;
+    SCAutomaton occupationalAutomaton;
+    SCAutomaton dynamicAutomaton;
+
+    uint64_t base_occupied;
+
+    void create_automata(uint64_t number_of_bases, uint64_t initial_base);
+    void triggerTransitions(SCAutomaton::Event e);
+    //endreddy
     static const AP_FWVersion fwver;
 
     // key aircraft parameters passed to multiple libraries
