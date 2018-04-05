@@ -236,60 +236,53 @@ void Copter::userhook_FastLoop()
 #ifdef USERHOOK_50HZLOOP
 void Copter::userhook_50Hz()
 {
-	// Verifica ocorrência de eventos não controláveis
+	// Se os autômatos já foram inicializados
 
-	// Evento ARRIVE_I
-	if(dynamicAutomaton.isAtState("FLYING_BASE") &&
-			mission.state() == AP_Mission::MISSION_COMPLETE) {
-		triggerTransitions(SCAutomaton::arrive.at(copter.base_occupied - 1));
-	}
+	if(geographicAutomaton.isInitialized()) {
+		// Verifica ocorrência de eventos não controláveis
 
-	// Evento TASK_END
-	if(occupationalAutomaton.isAtState("BUSY_ASSIGNMENT") &&
-			mission.state() == AP_Mission::MISSION_COMPLETE) {
+		// Evento ARRIVE_I
+		if(dynamicAutomaton.isAtState("FLYING_BASE") &&
+				mission.state() == AP_Mission::MISSION_COMPLETE) {
+			triggerTransitions(SCAutomaton::arrive.at(copter.base_occupied - 1));
+		}
 
-    	copter.set_mode(LOITER, MODE_REASON_COORDINATOR_COMMAND);
-		triggerTransitions(SCAutomaton::taskEnd);
+		// Evento TASK_END
+		if(occupationalAutomaton.isAtState("BUSY_ASSIGNMENT") &&
+				mission.state() == AP_Mission::MISSION_COMPLETE) {
 
-		// Envia a mensagem de TASKEND para a GCS
-		for (unsigned char i = 0; i < copter.gcs().num_gcs(); i++) {
-			if (copter.gcs().chan(i).initialised) {
-				copter.gcs().chan(i).send_task_end();
+			copter.set_mode(LOITER, MODE_REASON_COORDINATOR_COMMAND);
+			triggerTransitions(SCAutomaton::taskEnd);
+
+			// Envia a mensagem de TASKEND para a GCS
+			for (unsigned char i = 0; i < copter.gcs().num_gcs(); i++) {
+				if (copter.gcs().chan(i).initialised) {
+					copter.gcs().chan(i).send_task_end();
+				}
 			}
 		}
-	}
 
-	// Evento CRITICAL_SOC
-	if(occupationalAutomaton.isAtState("IDLE") &&
-			battery.capacity_remaining_pct() < CRITICAL_SOC_VALUE) {
-		triggerTransitions(SCAutomaton::criticalSoc);
+		// Evento CRITICAL_SOC
+		if(occupationalAutomaton.isAtState("IDLE") &&
+				battery.capacity_remaining_pct() < CRITICAL_SOC_VALUE) {
+			triggerTransitions(SCAutomaton::criticalSoc);
 
-		// Executa o evento REQUEST_CHARGE
-		for (unsigned char i = 0; i < copter.gcs().num_gcs(); i++) {
-			if (copter.gcs().chan(i).initialised) {
-				copter.gcs().chan(i).send_request_charge();
+			// Executa o evento REQUEST_CHARGE
+			for (unsigned char i = 0; i < copter.gcs().num_gcs(); i++) {
+				if (copter.gcs().chan(i).initialised) {
+					copter.gcs().chan(i).send_request_charge();
+				}
 			}
+			triggerTransitions(SCAutomaton::requestCharge);
 		}
-		triggerTransitions(SCAutomaton::requestCharge);
-	}
 
-	// Evento ACCEPTABLE_SOC
-	if(occupationalAutomaton.isAtState("BUSY_RECHARGING") &&
-			battery.capacity_remaining_pct() > ACCEPTABLE_SOC_VALUE) {
-		triggerTransitions(SCAutomaton::acceptableSoc);
-	}
-
-	// Send automata states 50 times per second
-	unsigned long int base_index = 3;
-	for (unsigned char i = 0; i < copter.gcs().num_gcs(); i++) {
-		if (copter.gcs().chan(i).initialised) {
-			copter.gcs().chan(i).send_current_states(
-					geographicAutomaton.getCurrentGeographicState(),
-					occupationalAutomaton.getCurrentOccupationalState(),
-					dynamicAutomaton.getCurrentDynamicState(),
-					base_occupied);
+		// Evento ACCEPTABLE_SOC
+		if(occupationalAutomaton.isAtState("BUSY_RECHARGING") &&
+				battery.capacity_remaining_pct() > ACCEPTABLE_SOC_VALUE) {
+			triggerTransitions(SCAutomaton::acceptableSoc);
 		}
 	}
+
 }
 #endif
 

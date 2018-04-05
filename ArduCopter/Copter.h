@@ -258,6 +258,9 @@ private:
 	// For supervision
 	State _currentState;
 
+	// Initialized
+	bool _initialized = false;
+
 public:
 	// Events
 	static SCAutomaton::Event answer;
@@ -305,6 +308,11 @@ public:
 		_transitionFunction = transitionFunction;
 		_language = language;
 		_currentState = initialState;
+		_initialized = true;
+	}
+
+	bool isInitialized() {
+		return _initialized;
 	}
 
 	STATE_GEOSTATE getCurrentGeographicState() {
