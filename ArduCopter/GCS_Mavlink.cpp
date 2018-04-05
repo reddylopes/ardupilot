@@ -720,7 +720,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
     	mavlink_multiuav_automata_initialparams_t packet;
     	mavlink_msg_multiuav_automata_initialparams_decode(msg, &packet);
     	copter.base_occupied = packet.base_index;
-		//copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - Number of bases: %i", packet.number_of_bases);
+    	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Parameters: %i %i", packet.number_of_bases, packet.base_index);
         copter.create_automata(packet.number_of_bases, copter.base_occupied);
         break;
     }
@@ -785,14 +785,18 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         // allow override of RC channel values for HIL
         // or for complete GCS control of switch position
         // and RC PWM values.
-        if(msg->sysid != copter.g.sysid_my_gcs) break;                         // Only accept control from our gcs
-        if (!copter.ap.rc_override_enable) {
+        if(msg->sysid != copter.g.sysid_my_gcs) break;  // Only accept control from our gcs
+        /*if (!copter.ap.rc_override_enable) {
+
+            copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - OVERRIDE MSG PROBLEMA NO OUTRO COISO");
             if (copter.failsafe.rc_override_active) {  // if overrides were active previously, disable them
+
+                copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - OVERRIDE MSG MAIS PROBLEMA AINDA");
                 copter.failsafe.rc_override_active = false;
                 hal.rcin->clear_overrides();
             }
             break;
-        }
+        }*/
         mavlink_rc_channels_override_t packet;
         int16_t v[8];
         mavlink_msg_rc_channels_override_decode(msg, &packet);
@@ -805,6 +809,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         v[5] = packet.chan6_raw;
         v[6] = packet.chan7_raw;
         v[7] = packet.chan8_raw;
+
+        copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - OVERRIDE CHANNEL 3 %i", packet.chan3_raw);
 
         // record that rc are overwritten so we can trigger a failsafe if we lose contact with groundstation
         copter.failsafe.rc_override_active = hal.rcin->set_overrides(v, 8);

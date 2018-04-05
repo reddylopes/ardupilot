@@ -394,6 +394,10 @@ public:
 			}
 		}
 	}
+
+	State getCurrentState() {
+		return _currentState;
+	}
 };
 //endreddy
 

@@ -151,7 +151,7 @@ void Copter::create_automata(uint64_t number_of_bases, uint64_t initial_base) {
 
 	SCAutomaton::Transition transition11(SCAutomaton::answer, stopped, assigned);
 	dynamicAutomatonTransitionFunction.push_back(transition11);
-	SCAutomaton::Transition transition12(SCAutomaton::returnToBase, idle, idle);
+	SCAutomaton::Transition transition12(SCAutomaton::answer, assigned, assigned);
 	dynamicAutomatonTransitionFunction.push_back(transition12);
 
 	for (uint64_t b = 1; b <= number_of_bases; b++)
@@ -188,9 +188,16 @@ void Copter::create_automata(uint64_t number_of_bases, uint64_t initial_base) {
 				base_occupied);
 		}
 	}
+
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending GEOSTATE %s", geographicAutomaton.getCurrentState().getLabel().c_str());
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending OCCSTATE %s", occupationalAutomaton.getCurrentState().getLabel().c_str());
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending DYNSTATE %s", dynamicAutomaton.getCurrentState().getLabel().c_str());
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending BASE_OCCUPIED %i", copter.base_occupied);
 }
 
 void Copter::triggerTransitions(SCAutomaton::Event e) {
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Triggering event %s", e.getLabel().c_str());
+
 	geographicAutomaton.triggerTransition(e);
 	occupationalAutomaton.triggerTransition(e);
 	dynamicAutomaton.triggerTransition(e);
@@ -204,6 +211,11 @@ void Copter::triggerTransitions(SCAutomaton::Event e) {
 					base_occupied);
 		}
 	}
+
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending GEOSTATE %s", geographicAutomaton.getCurrentState().getLabel().c_str());
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending OCCSTATE %s", occupationalAutomaton.getCurrentState().getLabel().c_str());
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending DYNSTATE %s", dynamicAutomaton.getCurrentState().getLabel().c_str());
+	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Sending BASE_OCCUPIED %i", copter.base_occupied);
 }
 
 #ifdef USERHOOK_INIT
@@ -235,6 +247,8 @@ void Copter::userhook_50Hz()
 	// Evento TASK_END
 	if(occupationalAutomaton.isAtState("BUSY_ASSIGNMENT") &&
 			mission.state() == AP_Mission::MISSION_COMPLETE) {
+
+    	copter.set_mode(LOITER, MODE_REASON_COORDINATOR_COMMAND);
 		triggerTransitions(SCAutomaton::taskEnd);
 
 		// Envia a mensagem de TASKEND para a GCS
