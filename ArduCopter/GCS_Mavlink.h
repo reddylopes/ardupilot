@@ -22,6 +22,8 @@ public:
     void send_request_charge();
 
     void send_task_end();
+
+    void send_target_position(double target_lat, double target_lng, float target_alt);
     //endreddy
 protected:
 

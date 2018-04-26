@@ -1934,4 +1934,10 @@ void GCS_MAVLINK_Copter::send_task_end() {
 					0);
 }
 
+void GCS_MAVLINK_Copter::send_target_position(double target_lat, double target_lng, float target_alt) {
+	mavlink_msg_multiuav_targets_send(
+						chan,
+						target_lat, target_lng, target_alt);
+}
+
 //endreddy

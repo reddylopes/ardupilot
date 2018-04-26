@@ -283,6 +283,26 @@ void Copter::userhook_50Hz()
 		}
 	}
 
+	// Envia posição alvo
+	AP_Mission::Mission_Command last_cmd;
+	if(mission.read_cmd_from_storage(mission.num_commands()-1, last_cmd))
+	{
+		double lat, lng, alt;
+		lat = last_cmd.content.location.lat / 10000000.0f;
+		lng = last_cmd.content.location.lng / 10000000.0f;
+		alt = last_cmd.content.location.alt / 100.0f;
+		gcs().send_text(MAV_SEVERITY_INFO, "Target exists: %f %f %f", lat, lng, alt);
+		for (unsigned char i = 0; i < copter.gcs().num_gcs(); i++)
+		{
+			if (copter.gcs().chan(i).initialised)
+			{
+				copter.gcs().chan(i).send_target_position(lat, lng, alt);
+			}
+		}
+	} else {
+		gcs().send_text(MAV_SEVERITY_INFO, "Target does not exist!");
+	}
+
 }
 #endif
 
