@@ -20,8 +20,8 @@ SCAutomaton::Event SCAutomaton::criticalSoc("CRITICAL_SOC", false);
 #define ACCEPTABLE_SOC_VALUE 99
 SCAutomaton::Event SCAutomaton::acceptableSoc("ACCEPTABLE_SOC", false);
 
-std::vector<SCAutomaton::Event> SCAutomaton::go(20);
-std::vector<SCAutomaton::Event> SCAutomaton::arrive(20);
+std::vector<SCAutomaton::Event> SCAutomaton::go;
+std::vector<SCAutomaton::Event> SCAutomaton::arrive;
 
 void Copter::create_automata(uint64_t number_of_bases, uint64_t initial_base) {
 
@@ -31,6 +31,10 @@ void Copter::create_automata(uint64_t number_of_bases, uint64_t initial_base) {
 		SCAutomaton::Event arriveI("ARRIVE" + SSTR(b), false);
 		SCAutomaton::go.push_back(goI);
 		SCAutomaton::arrive.push_back(arriveI);
+		copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Created event %s", goI.getLabel().c_str());
+		copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Created event %s", arriveI.getLabel().c_str());
+		copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Stored event %s", SCAutomaton::go.at(b-1).getLabel().c_str());
+		copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Stored event %s", SCAutomaton::arrive.at(b-1).getLabel().c_str());
 	}
 
 	// Geographic Automaton
@@ -291,7 +295,6 @@ void Copter::userhook_50Hz()
 		lat = last_cmd.content.location.lat / 10000000.0f;
 		lng = last_cmd.content.location.lng / 10000000.0f;
 		alt = last_cmd.content.location.alt / 100.0f;
-		gcs().send_text(MAV_SEVERITY_INFO, "Target exists: %f %f %f", lat, lng, alt);
 		for (unsigned char i = 0; i < copter.gcs().num_gcs(); i++)
 		{
 			if (copter.gcs().chan(i).initialised)

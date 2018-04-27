@@ -734,6 +734,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
     	// Acionando evento controlável: GO_I
     	copter.set_mode(AUTO, MODE_REASON_COORDINATOR_COMMAND);
     	copter.base_occupied = packet.base_index;
+    	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - TESTE BASE %i", copter.base_occupied);
+    	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - TESTE EVENTO %s", SCAutomaton::go.at(copter.base_occupied - 1).getLabel().c_str());
     	copter.triggerTransitions(SCAutomaton::go.at(copter.base_occupied - 1));
         break;
     }
@@ -743,7 +745,12 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         //copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "REDDY - MULTIUAV_ASSIGNMENT received");
 		copter.triggerTransitions(SCAutomaton::assignment);
     	// Acionando evento controlável: ANSWER
-    	copter.set_mode(AUTO, MODE_REASON_COORDINATOR_COMMAND);
+		if(copter.dynamicAutomaton.isAtState("FLYING_BASE")) {
+			copter.set_mode(LOITER, MODE_REASON_COORDINATOR_COMMAND);
+			copter.set_mode(AUTO, MODE_REASON_COORDINATOR_COMMAND);
+		} else {
+			copter.set_mode(AUTO, MODE_REASON_COORDINATOR_COMMAND);
+		}
     	copter.base_occupied = 0;
     	copter.triggerTransitions(SCAutomaton::answer);
 		break;

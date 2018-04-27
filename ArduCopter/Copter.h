@@ -380,16 +380,18 @@ public:
 	}
 
 	bool isAtState(std::string label) {
-		size_t len = label.length();
+		std::string currentLabel = _currentState.getLabel();
+		std::string currentLabelTrim;
+		size_t len = currentLabel.length();
+
 		for(size_t i = 0; i < len; i++){
-		    if (isdigit(label[i]))
+		    if (!isdigit(currentLabel[i]))
 		    {
-		    	label.erase(i,1);
-		        len--;
+		    	currentLabelTrim.push_back(currentLabel[i]);
 		    }
 		}
 
-		return label.compare(_currentState.getLabel()) == 0;
+		return label.compare(currentLabelTrim) == 0;
 	}
 
 	void triggerTransition(Event e) {
