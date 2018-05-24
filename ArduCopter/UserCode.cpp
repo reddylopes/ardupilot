@@ -18,7 +18,7 @@ SCAutomaton::Event SCAutomaton::assignment("ASSIGNMENT", false);
 #define CRITICAL_SOC_VALUE 20
 SCAutomaton::Event SCAutomaton::criticalSoc("CRITICAL_SOC", false);
 #define ACCEPTABLE_SOC_VALUE 99
-SCAutomaton::Event SCAutomaton::acceptableSoc("ACCEPTABLE_SOC", false);
+SCAutomaton::Event SCAutomaton::rechargeEnd("ACCEPTABLE_SOC", false);
 
 std::vector<SCAutomaton::Event> SCAutomaton::go;
 std::vector<SCAutomaton::Event> SCAutomaton::arrive;
@@ -93,7 +93,7 @@ void Copter::create_automata(uint64_t number_of_bases, uint64_t initial_base) {
 	occupationalAutomatonLanguage.push_back(SCAutomaton::answer);
 	occupationalAutomatonLanguage.push_back(SCAutomaton::taskEnd);
 	occupationalAutomatonLanguage.push_back(SCAutomaton::criticalSoc);
-	occupationalAutomatonLanguage.push_back(SCAutomaton::acceptableSoc);
+	occupationalAutomatonLanguage.push_back(SCAutomaton::rechargeEnd);
 	occupationalAutomatonLanguage.push_back(SCAutomaton::requestCharge);
 	occupationalAutomatonLanguage.push_back(SCAutomaton::assignment);
 	occupationalAutomatonLanguage.push_back(SCAutomaton::returnToBase);
@@ -116,7 +116,7 @@ void Copter::create_automata(uint64_t number_of_bases, uint64_t initial_base) {
 	occupationalAutomatonTransitionFunction.push_back(transition5);
 	SCAutomaton::Transition transition6(SCAutomaton::criticalSoc, idle, busyR);
 	occupationalAutomatonTransitionFunction.push_back(transition6);
-	SCAutomaton::Transition transition7(SCAutomaton::acceptableSoc, busyR, idle);
+	SCAutomaton::Transition transition7(SCAutomaton::rechargeEnd, busyR, idle);
 	occupationalAutomatonTransitionFunction.push_back(transition7);
 	SCAutomaton::Transition transition8(SCAutomaton::requestCharge, busyR, busyR);
 	occupationalAutomatonTransitionFunction.push_back(transition8);
@@ -268,7 +268,7 @@ void Copter::userhook_50Hz()
 
 		// Evento CRITICAL_SOC
 		if(occupationalAutomaton.isAtState("IDLE") &&
-				battery.capacity_remaining_pct() < CRITICAL_SOC_VALUE) {
+				battery.capacity_remaining_pct() < copter.critical_soc) {
 			triggerTransitions(SCAutomaton::criticalSoc);
 
 			// Executa o evento REQUEST_CHARGE
@@ -280,10 +280,10 @@ void Copter::userhook_50Hz()
 			triggerTransitions(SCAutomaton::requestCharge);
 		}
 
-		// Evento ACCEPTABLE_SOC
+		// Evento RECHARGE_END
 		if(occupationalAutomaton.isAtState("BUSY_RECHARGING") &&
 				battery.capacity_remaining_pct() > ACCEPTABLE_SOC_VALUE) {
-			triggerTransitions(SCAutomaton::acceptableSoc);
+			triggerTransitions(SCAutomaton::rechargeEnd);
 		}
 	}
 

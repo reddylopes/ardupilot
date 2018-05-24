@@ -720,6 +720,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
     	mavlink_multiuav_automata_initialparams_t packet;
     	mavlink_msg_multiuav_automata_initialparams_decode(msg, &packet);
     	copter.base_occupied = packet.base_index;
+    	copter.critical_soc = packet.critical_soc;
     	copter.gcs().send_text(MAV_SEVERITY_INFO, "REDDY - Parameters: %i %i", packet.number_of_bases, packet.base_index);
         copter.create_automata(packet.number_of_bases, copter.base_occupied);
         break;

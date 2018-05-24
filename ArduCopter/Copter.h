@@ -271,7 +271,7 @@ public:
 	static SCAutomaton::Event returnToBase;
 	static SCAutomaton::Event assignment;
 	static SCAutomaton::Event criticalSoc;
-	static SCAutomaton::Event acceptableSoc;
+	static SCAutomaton::Event rechargeEnd;
 	static std::vector<SCAutomaton::Event> arrive;
 
 	//States
@@ -438,6 +438,7 @@ private:
     SCAutomaton dynamicAutomaton;
 
     uint64_t base_occupied;
+    uint16_t critical_soc;
 
     void create_automata(uint64_t number_of_bases, uint64_t initial_base);
     void triggerTransitions(SCAutomaton::Event e);
