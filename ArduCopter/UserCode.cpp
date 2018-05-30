@@ -124,6 +124,8 @@ void Copter::create_automata(uint64_t number_of_bases, uint64_t initial_base) {
 	occupationalAutomatonTransitionFunction.push_back(transition9);
 	SCAutomaton::Transition transition10(SCAutomaton::returnToBase, idle, idle);
 	occupationalAutomatonTransitionFunction.push_back(transition10);
+	SCAutomaton::Transition transition10_a(SCAutomaton::returnToBase, busyR, busyR);
+	occupationalAutomatonTransitionFunction.push_back(transition10_a);
 
 	occupationalAutomaton.setFields(
 		"Occupational Automaton",
